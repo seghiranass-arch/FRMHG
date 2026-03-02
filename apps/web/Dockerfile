@@ -1,7 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
@@ -11,6 +11,6 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.mjs ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 EXPOSE 3000
 CMD ["npm", "start"]

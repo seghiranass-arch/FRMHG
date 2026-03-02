@@ -11,7 +11,6 @@ import {
   Length,
   Matches,
 } from 'class-validator';
-import { LicenseStatus } from '.prisma/client';
 
 export class CreateMemberDto {
   @IsString()
@@ -400,7 +399,7 @@ export class MemberFilterDto {
   memberStatus?: string;
 
   @IsOptional()
-  licenseStatus?: LicenseStatus;
+  licenseStatus?: 'draft' | 'pending_payment' | 'pending_approval' | 'active' | 'archived';
 
   @IsUUID()
   @IsOptional()

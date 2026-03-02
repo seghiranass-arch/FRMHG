@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIamUserDto, ResetPasswordDto, UpdateIamUserDto } from './dto/iam-user.dto';
@@ -49,11 +50,18 @@ type IamUser = {
   roles: string[];
 };
 
+type UserWithOrg = Prisma.UserGetPayload<{
+  include: {
+    members: { select: { orgId: true }; take: 1 };
+    org: { select: { name: true } };
+  };
+}>;
+
 @Injectable()
 export class IamService {
   constructor(private prisma: PrismaService) {}
 
-  private toIamUser(user: any): IamUser {
+  private toIamUser(user: UserWithOrg): IamUser {
     const roles = user.roles || [];
     const isActive = !roles.includes(DISABLED_ROLE);
     const orgId = user.orgId ?? user.members?.[0]?.orgId ?? null;
@@ -70,7 +78,7 @@ export class IamService {
   }
 
   async listUsers(includeInactive: boolean): Promise<IamUser[]> {
-    const users = await this.prisma.user.findMany({
+    const users: UserWithOrg[] = await this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         members: { select: { orgId: true }, take: 1 },
@@ -134,7 +142,7 @@ export class IamService {
         members: { select: { orgId: true }, take: 1 },
         org: { select: { name: true } },
       },
-    });
+    }) as UserWithOrg;
     return this.toIamUser(user);
   }
 
@@ -151,7 +159,7 @@ export class IamService {
         throw new BadRequestException('Club introuvable.');
       }
     }
-    const data: any = {};
+    const data: Prisma.UserUncheckedUpdateInput = {};
     if (dto.displayName) data.displayName = dto.displayName;
     if (dto.roles) data.roles = nextRoles;
     if (dto.orgId !== undefined) data.orgId = dto.orgId;
@@ -162,7 +170,7 @@ export class IamService {
         members: { select: { orgId: true }, take: 1 },
         org: { select: { name: true } },
       },
-    });
+    }) as UserWithOrg;
     return this.toIamUser(user);
   }
 

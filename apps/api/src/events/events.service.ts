@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 
@@ -112,7 +113,7 @@ export class EventsService {
   async update(id: string, updateEventDto: UpdateEventDto) {
     const { participantIds, ...eventData } = updateEventDto;
 
-    return this.prisma.$transaction(async (prisma) => {
+    return this.prisma.$transaction(async (prisma: Prisma.TransactionClient) => {
       if (participantIds) {
         // Remove all existing participants
         await prisma.eventParticipant.deleteMany({

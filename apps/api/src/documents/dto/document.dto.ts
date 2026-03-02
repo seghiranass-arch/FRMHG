@@ -4,7 +4,7 @@ import {
   IsUUID,
   IsInt,
 } from 'class-validator';
-import { DocumentType } from '.prisma/client';
+import { DocumentType } from '@prisma/client';
 
 export class CreateDocumentDto {
   @IsString()

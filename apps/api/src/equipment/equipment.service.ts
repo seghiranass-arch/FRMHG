@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEquipmentItemDto, CreateEquipmentMovementDto } from './dto/equipment.dto';
 
@@ -60,7 +61,7 @@ export class EquipmentService {
       throw new BadRequestException('Quantité demandée supérieure au stock disponible');
     }
 
-    return this.prisma.$transaction(async tx => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const movement = await tx.equipmentMovement.create({
         data: {
           equipmentId: equipment.id,
@@ -114,7 +115,7 @@ export class EquipmentService {
     if (movement.status === 'completed' || movement.status === 'cancelled') {
       throw new BadRequestException('Déplacement déjà terminé');
     }
-    return this.prisma.$transaction(async tx => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.equipmentMovement.update({
         where: { id },
         data: {
@@ -174,7 +175,14 @@ export class EquipmentService {
       },
       orderBy: { completedAt: 'desc' },
     });
-    return fallbackMovements.map(movement => ({
+    return fallbackMovements.map((movement: Prisma.EquipmentMovementGetPayload<{
+      include: {
+        equipment: true;
+        fromOrg: true;
+        toOrg: true;
+        toMember: true;
+      };
+    }>) => ({
       id: movement.id,
       movementId: movement.id,
       action: movement.status === 'cancelled' ? 'cancelled' : 'completed',

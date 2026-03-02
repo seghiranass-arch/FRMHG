@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --frmhg-green: #1b5448;
+  --frmhg-green-2: #6d9432;
+  --frmhg-red: #b91414;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: rgb(10 20 18);
+  background: #ffffff;
+}
+
+.container-x {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(27, 84, 72, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+/* Animation classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* TailAdmin-like utilities (ported to Tailwind v3) */
+@layer components {
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar,
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .menu-item {
+    @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2 font-medium text-theme-sm;
+  }
+  .menu-item-active {
+    @apply bg-brand-50 text-brand-500;
+  }
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 hover:text-gray-700;
+  }
+  .menu-item-icon-active {
+    @apply text-white;
+  }
+  .menu-item-icon-inactive {
+    @apply text-gray-500 group-hover:text-gray-700;
+  }
+  .menu-item-text {
+    @apply whitespace-nowrap;
+  }
+
+  .menu-dropdown-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium;
+  }
+  .menu-dropdown-item-active {
+    @apply bg-brand-50 text-brand-500;
+  }
+  .menu-dropdown-item-inactive {
+    @apply text-gray-600 hover:bg-gray-100 hover:text-gray-800;
+  }
+
+  .menu-dropdown-badge {
+    @apply rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase;
+  }
+  .menu-dropdown-badge-active {
+    @apply bg-brand-100 text-brand-700;
+  }
+  .menu-dropdown-badge-inactive {
+    @apply bg-gray-100 text-gray-700;
+  }
+}
+
+

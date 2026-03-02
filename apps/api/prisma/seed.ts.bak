@@ -1,0 +1,186 @@
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+// Test users matching frontend quick-login buttons
+const TEST_USERS = [
+  {
+    email: 'admin@frmhg.ma',
+    password: 'Admin123!',
+    displayName: 'Administrateur Fédération',
+    roles: ['federation_admin'],
+  },
+  {
+    email: 'club@frmhg.ma',
+    password: 'Club123!',
+    displayName: 'Administrateur Club',
+    roles: ['club_admin'],
+  },
+  {
+    email: 'national@frmhg.ma',
+    password: 'National123!',
+    displayName: 'Direction Technique Nationale',
+    roles: ['dtn'],
+  },
+  {
+    email: 'finance@frmhg.ma',
+    password: 'Finance123!',
+    displayName: 'Responsable Financier',
+    roles: ['finance'],
+  },
+  {
+    email: 'stock@frmhg.ma',
+    password: 'Stock123!',
+    displayName: 'Gestionnaire Matériel',
+    roles: ['stock'],
+  },
+  {
+    email: 'medecin@frmhg.ma',
+    password: 'Medecin123!',
+    displayName: 'Médecin',
+    roles: ['medecin'],
+  },
+  {
+    email: 'arbitre@frmhg.ma',
+    password: 'Arbitre123!',
+    displayName: 'Arbitre',
+    roles: ['arbitre'],
+  },
+];
+
+// Sample clubs
+const SAMPLE_CLUBS = [
+  {
+    name: 'Club Hockey Casablanca',
+    acronym: 'CHC',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Casablanca-Settat',
+    city: 'Casablanca',
+    primaryPhone: '+212 5 22 123456',
+    officialEmail: 'contact@chc.ma',
+    presidentName: 'Ahmed Bennani',
+  },
+  {
+    name: 'Association Hockey Rabat',
+    acronym: 'AHR',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Rabat-Salé-Kénitra',
+    city: 'Rabat',
+    primaryPhone: '+212 5 37 654321',
+    officialEmail: 'info@ahr.ma',
+    presidentName: 'Karim El Fassi',
+  },
+  {
+    name: 'Club Sportif Marrakech',
+    acronym: 'CSM',
+    type: 'club' as const,
+    status: 'pending' as const,
+    region: 'Marrakech-Safi',
+    city: 'Marrakech',
+    primaryPhone: '+212 5 24 789012',
+    officialEmail: 'contact@csm.ma',
+    presidentName: 'Omar Alami',
+  },
+  {
+    name: 'Hockey Club Tanger',
+    acronym: 'HCT',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Tanger-Tétouan-Al Hoceïma',
+    city: 'Tanger',
+    primaryPhone: '+212 5 39 345678',
+    officialEmail: 'info@hct.ma',
+    presidentName: 'Youssef Tazi',
+  },
+  {
+    name: 'Club Athlétique Fès',
+    acronym: 'CAF',
+    type: 'club' as const,
+    status: 'suspended' as const,
+    region: 'Fès-Meknès',
+    city: 'Fès',
+    primaryPhone: '+212 5 35 567890',
+    officialEmail: 'contact@caf.ma',
+    presidentName: 'Rachid Berrada',
+    suspensionReason: 'Documents administratifs non conformes',
+  },
+];
+
+async function main() {
+  console.log('Seeding database...');
+
+  // Create users
+  for (const userData of TEST_USERS) {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {
+        password: hashedPassword,
+        displayName: userData.displayName,
+        roles: userData.roles,
+      },
+      create: {
+        email: userData.email,
+        password: hashedPassword,
+        displayName: userData.displayName,
+        roles: userData.roles,
+      },
+    });
+    console.log(`  User: ${userData.email}`);
+  }
+
+  // Create clubs
+  for (const clubData of SAMPLE_CLUBS) {
+    await prisma.org.upsert({
+      where: { id: clubData.name.toLowerCase().replace(/\s+/g, '-') },
+      update: clubData,
+      create: {
+        id: clubData.name.toLowerCase().replace(/\s+/g, '-'),
+        ...clubData,
+      },
+    });
+    console.log(`  Club: ${clubData.name}`);
+  }
+
+  // Create some sample members
+  const clubs = await prisma.org.findMany();
+  if (clubs.length > 0) {
+    const sampleMembers = [
+      { firstName: 'Mohamed', lastName: 'Alaoui', category: 'joueur_club' as const, position: 'Forward', jerseyNumber: 10 },
+      { firstName: 'Yassine', lastName: 'Benali', category: 'joueur_club' as const, position: 'Defender', jerseyNumber: 4 },
+      { firstName: 'Fatima', lastName: 'Zahra', category: 'ecole_glace' as const },
+      { firstName: 'Karim', lastName: 'Idrissi', category: 'joueur_club' as const, position: 'Goalie', jerseyNumber: 1 },
+      { firstName: 'Amina', lastName: 'Chaoui', category: 'ecole_glace' as const },
+    ];
+
+    for (let i = 0; i < sampleMembers.length; i++) {
+      const member = sampleMembers[i];
+      const club = clubs[i % clubs.length];
+      
+      await prisma.member.create({
+        data: {
+          ...member,
+          email: `${member.firstName.toLowerCase()}.${member.lastName.toLowerCase()}@example.com`,
+          licenseStatus: member.category === 'joueur_club' ? 'active' : 'pending',
+          orgId: club.id,
+        },
+      });
+      console.log(`  Member: ${member.firstName} ${member.lastName} -> ${club.name}`);
+    }
+  }
+
+  console.log('Seeding completed!');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

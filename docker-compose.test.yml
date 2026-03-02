@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: frmhg-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: frmhg
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7-alpine
+    container_name: frmhg-redis-test
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_test:/data
+    networks:
+      - internal
+
+  # MinIO for document storage
+  minio:
+    image: minio/minio:latest
+    container_name: frmhg-minio-test
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data_test:/data
+    networks:
+      - internal
+
+volumes:
+  postgres_data_test:
+  redis_data_test:
+  minio_data_test:
+
+networks:
+  internal:
+    driver: bridge

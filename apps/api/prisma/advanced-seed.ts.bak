@@ -1,0 +1,397 @@
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+// Realistic Moroccan hockey clubs
+const MOROCCAN_CLUBS = [
+  {
+    name: 'Hockey Club de Casablanca',
+    acronym: 'HCC',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Casablanca-Settat',
+    city: 'Casablanca',
+    primaryPhone: '+212 5 22 201234',
+    officialEmail: 'contact@hcc.ma',
+    presidentName: 'Mohamed Alaoui'
+  },
+  {
+    name: 'Association Sportive de Rabat',
+    acronym: 'ASR',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Rabat-Salé-Kénitra',
+    city: 'Rabat',
+    primaryPhone: '+212 5 37 765432',
+    officialEmail: 'info@asr.ma',
+    presidentName: 'Yassine Benali'
+  },
+  {
+    name: 'Club des Sports de Marrakech',
+    acronym: 'CSM',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Marrakech-Safi',
+    city: 'Marrakech',
+    primaryPhone: '+212 5 24 309876',
+    officialEmail: 'contact@csm.ma',
+    presidentName: 'Ahmed El Fassi'
+  },
+  {
+    name: 'Hockey Club de Tanger',
+    acronym: 'HCT',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Tanger-Tétouan-Al Hoceïma',
+    city: 'Tanger',
+    primaryPhone: '+212 5 39 987654',
+    officialEmail: 'info@hct.ma',
+    presidentName: 'Omar Tazi'
+  },
+  {
+    name: 'Union Sportive de Fès',
+    acronym: 'USF',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Fès-Meknès',
+    city: 'Fès',
+    primaryPhone: '+212 5 35 123456',
+    officialEmail: 'contact@usf.ma',
+    presidentName: 'Karim Bennani'
+  },
+  {
+    name: 'Club Athlétique d\'Agadir',
+    acronym: 'CAA',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Souss-Massa',
+    city: 'Agadir',
+    primaryPhone: '+212 5 28 567890',
+    officialEmail: 'info@caa.ma',
+    presidentName: 'Ali Amrani'
+  },
+  {
+    name: 'Hockey Club de Kenitra',
+    acronym: 'HCK',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Rabat-Salé-Kénitra',
+    city: 'Kenitra',
+    primaryPhone: '+212 5 37 234567',
+    officialEmail: 'contact@hck.ma',
+    presidentName: 'Mustapha Rifi'
+  },
+  {
+    name: 'Club de Hockey de Meknès',
+    acronym: 'CHM',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Fès-Meknès',
+    city: 'Meknès',
+    primaryPhone: '+212 5 35 987654',
+    officialEmail: 'info@chm.ma',
+    presidentName: 'Hassan Kabbaj'
+  },
+  {
+    name: 'Hockey Club de Oujda',
+    acronym: 'HCO',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Oriental',
+    city: 'Oujda',
+    primaryPhone: '+212 5 36 456789',
+    officialEmail: 'contact@hco.ma',
+    presidentName: 'Reda El Ouahabi'
+  },
+  {
+    name: 'Club Sportif de Safi',
+    acronym: 'CSS',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Marrakech-Safi',
+    city: 'Safi',
+    primaryPhone: '+212 5 24 678901',
+    officialEmail: 'info@css.ma',
+    presidentName: 'Driss Choukri'
+  },
+  {
+    name: 'Hockey Club de Settat',
+    acronym: 'HCS',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Casablanca-Settat',
+    city: 'Settat',
+    primaryPhone: '+212 5 23 345678',
+    officialEmail: 'contact@hcs.ma',
+    presidentName: 'Brahim Laghmich'
+  },
+  {
+    name: 'Club de Hockey de Nador',
+    acronym: 'CHN',
+    type: 'club' as const,
+    status: 'active' as const,
+    region: 'Oriental',
+    city: 'Nador',
+    primaryPhone: '+212 5 36 789012',
+    officialEmail: 'info@chn.ma',
+    presidentName: 'Jamal Bennis'
+  }
+];
+
+// Real player names (Moroccan)
+const PLAYER_FIRST_NAMES = [
+  'Mohamed', 'Yassine', 'Ahmed', 'Omar', 'Ali', 'Hassan', 'Mehdi', 'Karim', 
+  'Ayoub', 'Youssef', 'Adam', 'Bilal', 'Nabil', 'Reda', 'Said', 'Driss',
+  'Hamza', 'Ismail', 'Jawad', 'Khalid', 'Lahcen', 'Marouane', 'Noureddine',
+  'Otman', 'Rachid', 'Salim', 'Tarik', 'Walid', 'Zakaria', 'Abdelatif'
+];
+
+const PLAYER_LAST_NAMES = [
+  'Alaoui', 'Benali', 'El Fassi', 'Tazi', 'Bennani', 'Amrani', 'Rifi', 'Kabbaj',
+  'El Ouahabi', 'Choukri', 'Laghmich', 'Bennis', 'Farhi', 'Ghali', 'Hajji',
+  'Idrissi', 'Jabrane', 'Kadiri', 'Lahlou', 'Messaoudi', 'Najib', 'Ouazzani',
+  'Qadiri', 'Rahmouni', 'Sbai', 'Taoufiq', 'Yaala', 'Zeroual', 'Ait Brahim',
+  'Belkhayat'
+];
+
+// Competition data
+const COMPETITIONS = [
+  {
+    name: 'Championnat National Senior Masculin',
+    season: '2025-2026',
+    startDate: new Date('2025-10-15'),
+    endDate: new Date('2026-04-30'),
+    status: 'planned'
+  },
+  {
+    name: 'Coupe du Trône',
+    season: '2025-2026',
+    startDate: new Date('2026-01-15'),
+    endDate: new Date('2026-05-15'),
+    status: 'planned'
+  },
+  {
+    name: 'Championnat National Féminin',
+    season: '2025-2026',
+    startDate: new Date('2025-11-01'),
+    endDate: new Date('2026-03-31'),
+    status: 'planned'
+  },
+  {
+    name: 'Championnat Jeunes -18 Ans',
+    season: '2025-2026',
+    startDate: new Date('2025-09-20'),
+    endDate: new Date('2026-05-10'),
+    status: 'planned'
+  }
+];
+
+// Hockey positions
+const POSITIONS = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant'];
+
+// Venues in Morocco
+const VENUES = [
+  'Complexe Mohammed VI - Casablanca',
+  'Palais des Sports - Rabat',
+  'Salle Omnisports - Marrakech',
+  'Centre Sportif Municipal - Tanger',
+  'Salle Ibn Batouta - Fès',
+  'Complexe Sportif - Agadir',
+  'Patinoire Régionale - Kenitra',
+  'Centre des Sports - Meknès'
+];
+
+function getRandomDate(start: Date, end: Date): Date {
+  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+}
+
+function generateRandomPlayer(orgId: string) {
+  const firstName = PLAYER_FIRST_NAMES[Math.floor(Math.random() * PLAYER_FIRST_NAMES.length)];
+  const lastName = PLAYER_LAST_NAMES[Math.floor(Math.random() * PLAYER_LAST_NAMES.length)];
+  const position = POSITIONS[Math.floor(Math.random() * POSITIONS.length)];
+  
+  // Generate realistic stats based on position
+  let goals = 0;
+  let assists = 0;
+  let gamesPlayed = Math.floor(Math.random() * 30) + 5; // 5-35 games
+  
+  if (position !== 'Gardien') {
+    goals = Math.floor(Math.random() * (gamesPlayed / 2)); // 0 to games/2
+    assists = Math.floor(Math.random() * (gamesPlayed / 1.5)); // 0 to games/1.5
+  }
+  
+  return {
+    firstName,
+    lastName,
+    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+    phone: `+212 6 ${Math.floor(Math.random() * 90000000) + 10000000}`,
+    dateOfBirth: getRandomDate(new Date(1990, 0, 1), new Date(2005, 11, 31)),
+    nationality: 'Marocaine',
+    category: 'joueur_club' as const,
+    licenseStatus: 'active' as const,
+    licenseExpiry: new Date(2026, 11, 31),
+    position,
+    jerseyNumber: Math.floor(Math.random() * 99) + 1,
+    goals,
+    assists,
+    gamesPlayed,
+    orgId
+  };
+}
+
+async function main() {
+  console.log('Generating realistic FRMHG data...');
+  
+  // 1. Create enhanced clubs
+  console.log('\n1. Creating clubs...');
+  for (const clubData of MOROCCAN_CLUBS) {
+    const club = await prisma.org.upsert({
+      where: { id: clubData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') },
+      update: clubData,
+      create: {
+        ...clubData,
+        id: clubData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      }
+    });
+    console.log(`  ✓ ${club.name}`);
+  }
+  
+  // 2. Generate realistic players (500+ players)
+  console.log('\n2. Generating players...');
+  const clubs = await prisma.org.findMany();
+  let totalPlayers = 0;
+  
+  for (const club of clubs) {
+    // Generate 30-50 players per club
+    const playerCount = Math.floor(Math.random() * 21) + 30; // 30-50 players
+    
+    for (let i = 0; i < playerCount; i++) {
+      const playerData = generateRandomPlayer(club.id);
+      await prisma.member.create({
+        data: playerData
+      });
+      totalPlayers++;
+    }
+    console.log(`  ✓ ${club.name}: ${playerCount} players`);
+  }
+  console.log(`  Total players created: ${totalPlayers}`);
+  
+  // 3. Create competitions
+  console.log('\n3. Creating competitions...');
+  const createdCompetitions = [];
+  for (const compData of COMPETITIONS) {
+    const competition = await prisma.competition.create({
+      data: compData
+    });
+    createdCompetitions.push(competition);
+    console.log(`  ✓ ${competition.name} (${competition.season})`);
+  }
+  
+  // 4. Generate match schedules
+  console.log('\n4. Generating match schedules...');
+  let totalMatches = 0;
+  
+  for (const competition of createdCompetitions) {
+    // Generate round-robin matches for each competition
+    const activeClubs = clubs.filter((c: any) => c.status === 'active');
+    const matchCount = Math.min(activeClubs.length * 2, 50); // Limit matches per competition
+    
+    for (let i = 0; i < matchCount; i++) {
+      const homeTeam = activeClubs[Math.floor(Math.random() * activeClubs.length)];
+      let awayTeam;
+      do {
+        awayTeam = activeClubs[Math.floor(Math.random() * activeClubs.length)];
+      } while (awayTeam.id === homeTeam.id);
+      
+      const matchDate = getRandomDate(competition.startDate, competition.endDate);
+      
+      await prisma.match.create({
+        data: {
+          competitionId: competition.id,
+          homeTeamId: homeTeam.id,
+          awayTeamId: awayTeam.id,
+          date: matchDate,
+          venue: VENUES[Math.floor(Math.random() * VENUES.length)],
+          status: Math.random() > 0.7 ? 'completed' : 'scheduled' // 30% completed, 70% scheduled
+        }
+      });
+      totalMatches++;
+    }
+    console.log(`  ✓ ${competition.name}: ${matchCount} matches`);
+  }
+  console.log(`  Total matches created: ${totalMatches}`);
+  
+  // 5. Update some matches with scores
+  console.log('\n5. Adding match results...');
+  const scheduledMatches = await prisma.match.findMany({
+    where: { status: 'completed' },
+    take: 30
+  });
+  
+  for (const match of scheduledMatches) {
+    // Generate realistic scores (most games are close)
+    const scoreDiff = Math.random() > 0.8 ? Math.floor(Math.random() * 4) + 1 : Math.floor(Math.random() * 2);
+    const winnerScore = Math.floor(Math.random() * 3) + scoreDiff;
+    const loserScore = winnerScore - scoreDiff;
+    
+    const homeWins = Math.random() > 0.5;
+    const homeScore = homeWins ? winnerScore : loserScore;
+    const awayScore = homeWins ? loserScore : winnerScore;
+    
+    await prisma.match.update({
+      where: { id: match.id },
+      data: {
+        homeScore,
+        awayScore,
+        status: 'completed'
+      }
+    });
+  }
+  console.log(`  ✓ Updated ${scheduledMatches.length} matches with scores`);
+  
+  // 6. Create realistic documents
+  console.log('\n6. Creating sample documents...');
+  const members = await prisma.member.findMany({ take: 20 });
+  const orgs = await prisma.org.findMany({ take: 10 });
+  
+  // Create various document types
+  const documentTypes = ['photo', 'id_card', 'medical_certificate', 'insurance', 'contract'];
+  
+  for (let i = 0; i < 50; i++) {
+    const isForMember = Math.random() > 0.4; // 60% for members, 40% for orgs
+    
+    await prisma.document.create({
+      data: {
+        filename: `doc-${Date.now()}-${i}.pdf`,
+        originalName: `document_${i + 1}.pdf`,
+        mimeType: 'application/pdf',
+        size: Math.floor(Math.random() * 2000000) + 100000, // 100KB - 2MB
+        type: documentTypes[Math.floor(Math.random() * documentTypes.length)] as any,
+        description: `Document généré automatiquement #${i + 1}`,
+        ...(isForMember 
+          ? { memberId: members[Math.floor(Math.random() * members.length)].id }
+          : { orgId: orgs[Math.floor(Math.random() * orgs.length)].id }
+        )
+      }
+    });
+  }
+  console.log(`  ✓ Created 50 sample documents`);
+  
+  console.log('\n✅ Data generation completed successfully!');
+  console.log(`📊 Summary:`);
+  console.log(`   • Clubs: ${clubs.length}`);
+  console.log(`   • Players: ${totalPlayers}`);
+  console.log(`   • Competitions: ${createdCompetitions.length}`);
+  console.log(`   • Matches: ${totalMatches}`);
+  console.log(`   • Documents: 50`);
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error during data generation:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

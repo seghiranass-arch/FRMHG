@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "orgs" ADD COLUMN     "active_categories" TEXT[],
+ADD COLUMN     "club_colors" JSONB,
+ADD COLUMN     "establishment_date" TIMESTAMP(3),
+ADD COLUMN     "federal_registration_number" TEXT,
+ADD COLUMN     "full_address" TEXT,
+ADD COLUMN     "organization_type" TEXT,
+ADD COLUMN     "practiced_disciplines" TEXT[],
+ADD COLUMN     "primary_contact_name" TEXT,
+ADD COLUMN     "primary_contact_phone" TEXT,
+ADD COLUMN     "reference_season" TEXT,
+ADD COLUMN     "rib_iban" TEXT,
+ADD COLUMN     "secretary_general_name" TEXT,
+ADD COLUMN     "social_media" JSONB,
+ADD COLUMN     "treasurer_name" TEXT;

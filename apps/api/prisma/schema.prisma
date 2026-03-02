@@ -1,0 +1,497 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  displayName String
+  roles       String[] @default(["user"])
+  orgId       String?  @map("org_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     Member[]
+  org         Org?     @relation(fields: [orgId], references: [id])
+  manualPlayerStatsUpdated ManualPlayerStats[] @relation("ManualPlayerStatsUpdatedBy")
+  createdEvents Event[] @relation("CreatedEvents")
+  participatingEvents EventParticipant[]
+
+  @@map("users")
+}
+
+model Org {
+  id                        String     @id @default(uuid())
+  name                      String
+  acronym                   String?
+  type                      OrgType    @default(club)
+  status                    OrgStatus  @default(active)
+  region                    String?
+  city                      String?
+  address                   String?
+  primaryPhone              String?    @map("primary_phone")
+  secondaryPhone            String?    @map("secondary_phone")
+  officialEmail             String?    @map("official_email")
+  website                   String?
+  presidentName             String?    @map("president_name")
+  presidentEmail            String?    @map("president_email")
+  presidentPhone            String?    @map("president_phone")
+  logoDocumentId            String?    @map("logo_document_id")
+  suspensionReason          String?    @map("suspension_reason")
+  archived                  Boolean    @default(false)
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+  activeCategories          String[]   @map("active_categories")
+  clubColors                Json?      @map("club_colors")
+  establishmentDate         DateTime?  @map("establishment_date")
+  federalRegistrationNumber String?    @map("federal_registration_number")
+  fullAddress               String?    @map("full_address")
+  organizationType          String?    @map("organization_type")
+  practicedDisciplines      String[]   @map("practiced_disciplines")
+  primaryContactName        String?    @map("primary_contact_name")
+  primaryContactPhone       String?    @map("primary_contact_phone")
+  referenceSeason           String?    @map("reference_season")
+  ribIban                   String?    @map("rib_iban")
+  secretaryGeneralName      String?    @map("secretary_general_name")
+  socialMedia               Json?      @map("social_media")
+  treasurerName             String?    @map("treasurer_name")
+  documents                 Document[]
+  awayMatches               Match[]    @relation("AwayMatches")
+  homeMatches               Match[]    @relation("HomeMatches")
+  winnerMatches             Match[]    @relation("WinnerMatches")
+  members                   Member[]
+  teams                     Team[]
+  equipmentItems            EquipmentItem[]
+  equipmentMovementsFrom    EquipmentMovement[] @relation("EquipmentMovementFromOrg")
+  equipmentMovementsTo      EquipmentMovement[] @relation("EquipmentMovementToOrg")
+  competitionClubs          CompetitionClub[]
+  users                     User[]
+
+  @@map("orgs")
+}
+
+model Member {
+  id                     String         @id @default(uuid())
+  firstName              String         @map("first_name")
+  lastName               String         @map("last_name")
+  sex                    String         // 'M' or 'F'
+  dateOfBirth            DateTime       @map("date_of_birth")
+  email                  String?
+  phone                  String?
+  address                String?
+  city                   String?
+  region                 String?
+  nationality            String?
+  idNumber               String?        @map("id_number")
+  idType                 String?        @map("id_type")       // 'cin' or 'passport'
+  emergencyContactName   String?        @map("emergency_contact_name")
+  emergencyContactPhone  String?        @map("emergency_contact_phone")
+  discipline             String?
+  ageCategory            String?        @map("age_category")
+  positions              String[]       // Array of position strings
+  jerseyNumber           Int?           @map("jersey_number")
+  memberStatus           String         @map("member_status")  // 'adherent' or 'club_player'
+  assignedClubId         String?        @map("assigned_club_id")
+  assignmentStartDate    DateTime?      @map("assignment_start_date")
+  assignmentEndDate      DateTime?      @map("assignment_end_date")
+  subscriptionType       String?        @map("subscription_type")
+  subscriptionId         String?        @map("subscription_id")
+  seasonId               String?        @map("season_id")
+  subscriptionAmount     Int?           @map("subscription_amount")
+  paymentMethod          String?        @map("payment_method")
+  paymentStatus          String?        @map("payment_status") // 'pending', 'paid', 'overdue'
+  paymentDate            DateTime?      @map("payment_date")
+  paymentReference       String?        @map("payment_reference")
+  medicalStatus          String?        @map("medical_status")
+  lastMedicalVisitDate   DateTime?      @map("last_medical_visit_date")
+  federationDoctor       String?        @map("federation_doctor")
+  medicalFitness         String?        @map("medical_fitness")
+  fitnessExpirationDate  DateTime?      @map("fitness_expiration_date")
+  medicalCertificateId   String?        @map("medical_certificate_id")
+  licenseNumber          String?        @map("license_number")
+  licenseSeason          String?        @map("license_season")
+  licenseType            String?        @map("license_type")
+  licenseStatus          LicenseStatus  @default(draft)
+  licenseIssueDate       DateTime?      @map("license_issue_date")
+  licenseExpirationDate  DateTime?      @map("license_expiration_date")
+  status                 String?        @default("active")
+  registrationDate       DateTime?      @map("registration_date")
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  orgId                  String?        @map("org_id")
+  userId                 String?        @map("user_id")
+  assists                Int            @default(0)
+  gamesPlayed            Int            @default(0) @map("games_played")
+  goals                  Int            @default(0)
+  teamId                 String?        @map("team_id")
+  documents              Document[]
+  org                    Org?           @relation(fields: [orgId], references: [id])
+  team                   Team?          @relation(fields: [teamId], references: [id])
+  user                   User?          @relation(fields: [userId], references: [id])
+  subscription           Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptions          MemberSubscription[]
+  equipmentMovements     EquipmentMovement[]
+  matchEvents            MatchEvent[]
+  manualPlayerStats      ManualPlayerStats[]
+
+  @@map("members")
+}
+
+model Subscription {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  amountCents    Int      @map("amount_cents")
+  currency       String   @default("MAD")
+  durationMonths Int?     @map("duration_months")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  members        Member[]
+  memberSubscriptions MemberSubscription[]
+
+  @@map("subscriptions")
+}
+
+model MemberSubscription {
+  id             String              @id @default(uuid())
+  memberId       String              @map("member_id")
+  subscriptionId String?             @map("subscription_id")
+  seasonId       String?             @map("season_id")
+  amountCents    Int                 @map("amount_cents")
+  currency       String              @default("MAD")
+  status         SubscriptionStatus  @default(active)
+  startDate      DateTime            @map("start_date")
+  endDate        DateTime            @map("end_date")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  member         Member              @relation(fields: [memberId], references: [id])
+  subscription   Subscription?       @relation(fields: [subscriptionId], references: [id])
+  payments       MemberPayment[]
+
+  @@map("member_subscriptions")
+}
+
+model MemberPayment {
+  id                   String         @id @default(uuid())
+  memberSubscriptionId String         @map("member_subscription_id")
+  amountCents          Int            @map("amount_cents")
+  currency             String         @default("MAD")
+  method               String?
+  status               PaymentStatus  @default(pending)
+  paidAt               DateTime?      @map("paid_at")
+  reference            String?
+  createdAt            DateTime       @default(now())
+  memberSubscription   MemberSubscription @relation(fields: [memberSubscriptionId], references: [id])
+
+  @@map("member_payments")
+}
+
+model Document {
+  id           String       @id @default(uuid())
+  filename     String
+  originalName String       @map("original_name")
+  mimeType     String       @map("mime_type")
+  size         Int
+  type         DocumentType @default(other)
+  description  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  orgId        String?      @map("org_id")
+  memberId     String?      @map("member_id")
+  member       Member?      @relation(fields: [memberId], references: [id])
+  org          Org?         @relation(fields: [orgId], references: [id])
+
+  @@map("documents")
+}
+
+model Team {
+  id          String     @id @default(uuid())
+  name        String
+  category    String
+  gender      String
+  description String?
+  orgId       String     @map("org_id")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  org         Org        @relation(fields: [orgId], references: [id])
+  members     Member[]
+
+  @@map("teams")
+}
+
+model EquipmentItem {
+  id               String   @id @default(uuid())
+  name             String
+  reference        String?
+  description      String?
+  quantity         Int      @default(0)
+  minQuantity      Int      @default(0) @map("min_quantity")
+  condition        String
+  location         String
+  ownerOrgId       String?  @map("owner_org_id")
+  notes            String?
+  photoDocumentId  String?  @map("photo_document_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  ownerOrg         Org?     @relation(fields: [ownerOrgId], references: [id])
+  movements        EquipmentMovement[]
+
+  @@map("equipment_items")
+}
+
+model EquipmentMovement {
+  id            String   @id @default(uuid())
+  equipmentId   String   @map("equipment_id")
+  movementType  String   @map("movement_type")
+  quantity      Int
+  reason        String
+  status        String   @default("pending")
+  fromOrgId     String?  @map("from_org_id")
+  toOrgId       String?  @map("to_org_id")
+  toMemberId    String?  @map("to_member_id")
+  requestedBy   String   @map("requested_by")
+  approvedBy    String?  @map("approved_by")
+  requestedAt   DateTime @default(now()) @map("requested_at")
+  approvedAt    DateTime? @map("approved_at")
+  completedAt   DateTime? @map("completed_at")
+  equipment     EquipmentItem @relation(fields: [equipmentId], references: [id])
+  fromOrg       Org?     @relation("EquipmentMovementFromOrg", fields: [fromOrgId], references: [id])
+  toOrg         Org?     @relation("EquipmentMovementToOrg", fields: [toOrgId], references: [id])
+  toMember      Member?  @relation(fields: [toMemberId], references: [id])
+  history       EquipmentMovementHistory[]
+
+  @@map("equipment_movements")
+}
+
+model EquipmentMovementHistory {
+  id          String   @id @default(uuid())
+  movementId  String   @map("movement_id")
+  action      String
+  performedBy String   @map("performed_by")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  movement    EquipmentMovement @relation(fields: [movementId], references: [id])
+
+  @@map("equipment_movement_history")
+}
+
+model Competition {
+  id        String   @id @default(uuid())
+  name      String
+  season    String
+  category  String?
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  status    String   @default("planned")
+  type      String   @default("league")
+  format    String   @default("league_double_round_robin")
+  phase     String   @default("draft")
+  cupTeamCount Int?  @map("cup_team_count")
+  lockedAt  DateTime? @map("locked_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  matches   Match[]
+  manualPlayerStats ManualPlayerStats[]
+  clubs     CompetitionClub[]
+  cupLinks  CupLink[]
+
+  @@map("competitions")
+}
+
+model CompetitionClub {
+  id            String      @id @default(uuid())
+  competitionId String      @map("competition_id")
+  clubId        String      @map("club_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  club          Org         @relation(fields: [clubId], references: [id])
+
+  @@unique([competitionId, clubId])
+  @@index([competitionId])
+  @@index([clubId])
+  @@map("competition_clubs")
+}
+
+model Match {
+  id            String      @id @default(uuid())
+  competitionId String      @map("competition_id")
+  homeTeamId    String?     @map("home_team_id")
+  awayTeamId    String?     @map("away_team_id")
+  winnerTeamId  String?     @map("winner_team_id")
+  date          DateTime
+  venue         String?
+  round         String?
+  roundNumber   Int?        @map("round_number")
+  leg           Int?        @map("leg")
+  bracketPosition Int?      @map("bracket_position")
+  status        String      @default("scheduled")
+  homeScore     Int?        @map("home_score")
+  awayScore     Int?        @map("away_score")
+  resultType    String?     @map("result_type")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  awayTeam      Org?        @relation("AwayMatches", fields: [awayTeamId], references: [id])
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  homeTeam      Org?        @relation("HomeMatches", fields: [homeTeamId], references: [id])
+  winnerTeam    Org?        @relation("WinnerMatches", fields: [winnerTeamId], references: [id])
+  sheet         MatchSheet?
+  cupLinksFrom  CupLink?    @relation("CupLinkFrom")
+  cupLinksTo    CupLink[]   @relation("CupLinkTo")
+
+  @@map("matches")
+}
+
+model MatchSheet {
+  id         String      @id @default(uuid())
+  matchId    String      @unique @map("match_id")
+  status     String      @default("draft")
+  homeRoster String[]    @map("home_roster")
+  awayRoster String[]    @map("away_roster")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  match      Match       @relation(fields: [matchId], references: [id])
+  events     MatchEvent[]
+
+  @@map("match_sheets")
+}
+
+model MatchEvent {
+  id             String     @id @default(uuid())
+  sheetId        String     @map("sheet_id")
+  type           String
+  teamId         String     @map("team_id")
+  playerId       String     @map("player_id")
+  assistIds      String[]   @map("assist_ids")
+  period         String     @default("regulation")
+  strength       String?
+  isGameWinning  Boolean    @default(false) @map("is_game_winning_goal")
+  pim            Int?
+  plusMinusDelta Int?       @map("plus_minus_delta")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  sheet          MatchSheet @relation(fields: [sheetId], references: [id])
+  player         Member     @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
+  @@index([teamId])
+  @@map("match_events")
+}
+
+model CupLink {
+  id            String      @id @default(uuid())
+  competitionId String      @map("competition_id")
+  fromMatchId   String      @unique @map("from_match_id")
+  toMatchId     String      @map("to_match_id")
+  toSlot        String      @map("to_slot")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  fromMatch     Match       @relation("CupLinkFrom", fields: [fromMatchId], references: [id])
+  toMatch       Match       @relation("CupLinkTo", fields: [toMatchId], references: [id])
+
+  @@index([competitionId])
+  @@index([toMatchId])
+  @@map("cup_links")
+}
+
+model ManualPlayerStats {
+  id            String      @id @default(uuid())
+  memberId      String      @map("member_id")
+  competitionId String      @map("competition_id")
+  gamesPlayed   Int         @default(0) @map("games_played")
+  goals         Int         @default(0)
+  assists       Int         @default(0)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  updatedById   String?     @map("updated_by_id")
+  member        Member      @relation(fields: [memberId], references: [id])
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  updatedBy     User?       @relation("ManualPlayerStatsUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([memberId, competitionId])
+  @@index([competitionId])
+  @@map("manual_player_stats")
+}
+
+enum OrgType {
+  club
+  national_team
+}
+
+enum OrgStatus {
+  pending
+  active
+  suspended
+  archived
+}
+
+enum MemberCategory {
+  joueur_club
+  ecole_glace
+}
+
+enum LicenseStatus {
+  draft
+  pending
+  active
+  expired
+  rejected
+}
+
+enum DocumentType {
+  photo
+  id_card
+  medical_certificate
+  insurance
+  contract
+  other
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  expired
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  canceled
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  location    String?
+  type        String   @default("event") // meeting, stage, other
+  
+  targetRoles String[] @map("target_roles") 
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("CreatedEvents", fields: [createdById], references: [id])
+  
+  participants EventParticipant[]
+
+  @@map("events")
+}
+
+model EventParticipant {
+  eventId String @map("event_id")
+  userId  String @map("user_id")
+  
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_participants")
+}

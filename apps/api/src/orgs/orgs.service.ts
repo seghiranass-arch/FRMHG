@@ -93,8 +93,12 @@ export class OrgsService {
 
   async delete(id: string) {
     await this.findOne(id); // Check exists
-    return this.prisma.org.delete({
+    return this.prisma.org.update({
       where: { id },
+      data: {
+        archived: true,
+        status: 'archived',
+      },
     });
   }
 

@@ -83,6 +83,10 @@ export default function FederationDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useMockData, setUseMockData] = useState(false);
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_URL?.startsWith("/")
+      ? process.env.NEXT_PUBLIC_API_URL
+      : "/api";
 
   // Mock user for dev mode
   const user = {
@@ -97,7 +101,7 @@ export default function FederationDashboard() {
         setError(null);
         
         // Try to fetch real data from API
-        const response = await fetch('http://localhost:3001/orgs/stats');
+        const response = await fetch(`${apiBaseUrl}/orgs/stats`);
         
         if (response.ok) {
           const apiData = await response.json();
@@ -231,5 +235,4 @@ export default function FederationDashboard() {
     </motion.div>
   );
 }
-
 
